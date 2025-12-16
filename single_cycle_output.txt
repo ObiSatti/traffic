@@ -1,0 +1,171 @@
+﻿--- Single-cycle execution trace ---
+PC=00: SET R15, 1          # Constant 1
+PC=01: SET R14, 5          # Main road green duration
+PC=02: SET R13, 3          # Left turn duration
+PC=03: SET R12, 2          # Pedestrian crossing duration
+PC=04: SET R11, 10         # Emergency override duration
+PC=05: SET R1, 0           # Base address
+PC=06: SET R2, 5           # NS timer = 5
+PC=07: SW R2, 0(R1)        # MEM[0] = 5
+PC=08: SET R2, 5           # EW timer = 5
+PC=09: SW R2, 4(R1)        # MEM[4] = 5
+PC=10: SET R2, 3           # NS-left timer = 3
+PC=11: SW R2, 8(R1)        # MEM[8] = 3
+PC=12: SET R2, 3           # EW-left timer = 3
+PC=13: SW R2, 12(R1)       # MEM[12] = 3
+PC=14: SET R2, 2           # Pedestrian timer = 2
+PC=15: SW R2, 16(R1)       # MEM[16] = 2
+PC=16: SET R2, 0           # Phase = 0 (NS)
+PC=17: SW R2, 20(R1)       # MEM[20] = 0
+PC=18: SET R2, 0           # Emergency = 0
+PC=19: SW R2, 24(R1)       # MEM[24] = 0
+PC=20: SET R2, 0           # Cycle counter = 0
+PC=21: SW R2, 28(R1)       # MEM[28] = 0
+PC=22: LW R10, 20(R1)      # R10 = current phase
+PC=23: OUT 0, R10          # Output current phase to port 0
+  OUT port 0 <= 0
+PC=24: LW R9, 28(R1)       # R9 = cycle counter
+PC=25: SET R8, 50          # Check value
+PC=26: BEQ R9, R8, emergency_mode
+PC=27: J normal_operation
+PC=36: BEQ R10, R0, phase_ns
+PC=44: LW R9, 0(R1)        # R9 = NS timer
+PC=45: SUB R9, R9, R15     # Decrement timer
+PC=46: SW R9, 0(R1)        # Store back
+PC=47: BEQ R9, R0, next_phase_ns
+PC=48: J update_cycle
+PC=93: LW R9, 28(R1)       # R9 = cycle counter
+PC=94: ADD R9, R9, R15     # Increment
+PC=95: SW R9, 28(R1)       # Store back
+PC=96: LW R8, 20(R1)       # R8 = current phase
+PC=97: OUT 2, R8           # Output phase
+  OUT port 2 <= 0
+PC=98: BEQ R8, R0, out_ns_timer
+PC=106: LW R7, 0(R1)
+PC=107: OUT 3, R7
+  OUT port 3 <= 4
+PC=108: J main_loop
+PC=22: LW R10, 20(R1)      # R10 = current phase
+PC=23: OUT 0, R10          # Output current phase to port 0
+  OUT port 0 <= 0
+PC=24: LW R9, 28(R1)       # R9 = cycle counter
+PC=25: SET R8, 50          # Check value
+PC=26: BEQ R9, R8, emergency_mode
+PC=27: J normal_operation
+PC=36: BEQ R10, R0, phase_ns
+PC=44: LW R9, 0(R1)        # R9 = NS timer
+PC=45: SUB R9, R9, R15     # Decrement timer
+PC=46: SW R9, 0(R1)        # Store back
+PC=47: BEQ R9, R0, next_phase_ns
+PC=48: J update_cycle
+PC=93: LW R9, 28(R1)       # R9 = cycle counter
+PC=94: ADD R9, R9, R15     # Increment
+PC=95: SW R9, 28(R1)       # Store back
+PC=96: LW R8, 20(R1)       # R8 = current phase
+PC=97: OUT 2, R8           # Output phase
+  OUT port 2 <= 0
+PC=98: BEQ R8, R0, out_ns_timer
+PC=106: LW R7, 0(R1)
+PC=107: OUT 3, R7
+  OUT port 3 <= 3
+PC=108: J main_loop
+PC=22: LW R10, 20(R1)      # R10 = current phase
+PC=23: OUT 0, R10          # Output current phase to port 0
+  OUT port 0 <= 0
+PC=24: LW R9, 28(R1)       # R9 = cycle counter
+PC=25: SET R8, 50          # Check value
+PC=26: BEQ R9, R8, emergency_mode
+PC=27: J normal_operation
+PC=36: BEQ R10, R0, phase_ns
+PC=44: LW R9, 0(R1)        # R9 = NS timer
+PC=45: SUB R9, R9, R15     # Decrement timer
+PC=46: SW R9, 0(R1)        # Store back
+PC=47: BEQ R9, R0, next_phase_ns
+PC=48: J update_cycle
+PC=93: LW R9, 28(R1)       # R9 = cycle counter
+PC=94: ADD R9, R9, R15     # Increment
+PC=95: SW R9, 28(R1)       # Store back
+PC=96: LW R8, 20(R1)       # R8 = current phase
+PC=97: OUT 2, R8           # Output phase
+  OUT port 2 <= 0
+PC=98: BEQ R8, R0, out_ns_timer
+PC=106: LW R7, 0(R1)
+PC=107: OUT 3, R7
+  OUT port 3 <= 2
+PC=108: J main_loop
+PC=22: LW R10, 20(R1)      # R10 = current phase
+PC=23: OUT 0, R10          # Output current phase to port 0
+  OUT port 0 <= 0
+PC=24: LW R9, 28(R1)       # R9 = cycle counter
+PC=25: SET R8, 50          # Check value
+PC=26: BEQ R9, R8, emergency_mode
+PC=27: J normal_operation
+PC=36: BEQ R10, R0, phase_ns
+PC=44: LW R9, 0(R1)        # R9 = NS timer
+PC=45: SUB R9, R9, R15     # Decrement timer
+PC=46: SW R9, 0(R1)        # Store back
+PC=47: BEQ R9, R0, next_phase_ns
+PC=48: J update_cycle
+PC=93: LW R9, 28(R1)       # R9 = cycle counter
+PC=94: ADD R9, R9, R15     # Increment
+PC=95: SW R9, 28(R1)       # Store back
+PC=96: LW R8, 20(R1)       # R8 = current phase
+PC=97: OUT 2, R8           # Output phase
+  OUT port 2 <= 0
+PC=98: BEQ R8, R0, out_ns_timer
+PC=106: LW R7, 0(R1)
+PC=107: OUT 3, R7
+  OUT port 3 <= 1
+PC=108: J main_loop
+PC=22: LW R10, 20(R1)      # R10 = current phase
+PC=23: OUT 0, R10          # Output current phase to port 0
+  OUT port 0 <= 0
+PC=24: LW R9, 28(R1)       # R9 = cycle counter
+PC=25: SET R8, 50          # Check value
+PC=26: BEQ R9, R8, emergency_mode
+PC=27: J normal_operation
+PC=36: BEQ R10, R0, phase_ns
+PC=44: LW R9, 0(R1)        # R9 = NS timer
+PC=45: SUB R9, R9, R15     # Decrement timer
+PC=46: SW R9, 0(R1)        # Store back
+PC=47: BEQ R9, R0, next_phase_ns
+PC=49: SET R9, 2           # Phase 2
+PC=50: SW R9, 20(R1)       # MEM[20] = 2
+PC=51: SW R13, 8(R1)       # Reset NS-left timer to 3
+PC=52: J update_cycle
+PC=93: LW R9, 28(R1)       # R9 = cycle counter
+PC=94: ADD R9, R9, R15     # Increment
+PC=95: SW R9, 28(R1)       # Store back
+PC=96: LW R8, 20(R1)       # R8 = current phase
+PC=97: OUT 2, R8           # Output phase
+  OUT port 2 <= 2
+PC=98: BEQ R8, R0, out_ns_timer
+PC=99: SET R7, 1
+PC=100: BEQ R8, R7, out_ew_timer
+PC=101: SET R7, 2
+PC=102: BEQ R8, R7, out_ns_left_timer
+PC=112: LW R7, 8(R1)
+PC=113: OUT 3, R7
+  OUT port 3 <= 3
+PC=114: J main_loop
+PC=22: LW R10, 20(R1)      # R10 = current phase
+PC=23: OUT 0, R10          # Output current phase to port 0
+  OUT port 0 <= 2
+PC=24: LW R9, 28(R1)       # R9 = cycle counter
+PC=25: SET R8, 50          # Check value
+PC=26: BEQ R9, R8, emergency_mode
+PC=27: J normal_operation
+PC=36: BEQ R10, R0, phase_ns
+PC=37: SET R6, 1
+PC=38: BEQ R10, R6, phase_ew
+PC=39: SET R6, 2
+PC=40: BEQ R10, R6, phase_ns_left
+PC=62: LW R9, 8(R1)        # R9 = NS-left timer
+PC=63: SUB R9, R9, R15     # Decrement timer
+PC=64: SW R9, 8(R1)        # Store back
+PC=65: BEQ R9, R0, next_phase_ns_left
+PC=66: J update_cycle
+Reached single-cycle cap (150 cycles). Stopping early.
+--- Final registers ---
+R00=0 R01=0 R02=0 R03=0 R04=0 R05=0 R06=2 R07=3 R08=50 R09=2 R10=2 R11=10 R12=2 R13=3 R14=5 R15=1 
+Cycles=150, Instructions=150, CPI=1.00

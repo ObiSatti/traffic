@@ -1,0 +1,222 @@
+================================================================================
+TRAFFIC INTERCHANGE SIMULATION - PERFORMANCE ANALYSIS
+Non-Pipelined vs. Pipelined Architecture Comparison
+================================================================================
+
+EXECUTIVE SUMMARY
+-----------------
+This analysis compares the performance of a single-cycle (non-pipelined) and 
+5-stage pipelined implementation of a Traffic-ASP processor executing a 
+complex traffic interchange simulation. The simulation models a 4-way junction 
+with multiple traffic phases, left-turn lanes, pedestrian crossings, and 
+emergency vehicle priority handling.
+
+TEST PROGRAM: samples/traffic_interchange.asm
+- Simulates a 4-way traffic junction with 5 phases:
+  * Phase 0: North-South main road (5 cycles)
+  * Phase 1: East-West main road (5 cycles)
+  * Phase 2: North-South left turn (3 cycles)
+  * Phase 3: East-West left turn (3 cycles)
+  * Phase 4: Pedestrian crossing (2 cycles)
+- Uses memory-mapped I/O for state management
+- Implements emergency mode detection
+- Contains multiple load-use patterns and control flow branches
+
+TEST CONFIGURATION
+------------------
+- Maximum cycles: 150
+- Architecture 1: Single-cycle (non-pipelined)
+- Architecture 2: 5-stage pipeline (IF/ID/EX/MEM/WB)
+  * Forwarding from EX/MEM and MEM/WB stages
+  * Load-use hazard detection with automatic stalling
+  * Control hazard handling (branch flush)
+
+PERFORMANCE METRICS
+-------------------
+
+1. SINGLE-CYCLE (NON-PIPELINED) ARCHITECTURE
+   ------------------------------------------
+   Cycles:           150
+   Instructions:     150
+   CPI (Cycles per Instruction): 1.00
+   
+   Characteristics:
+   - Each instruction completes in exactly 1 cycle
+   - No pipeline overhead or stalls
+   - Simple control logic
+   - Lower throughput but predictable timing
+
+2. PIPELINED ARCHITECTURE
+   -----------------------
+   Cycles:           150
+   Completed Instructions: 95
+   CPI (Cycles per Instruction): 1.58
+   
+   Characteristics:
+   - Multiple instructions in flight simultaneously
+   - Pipeline stalls observed: 8 load-use stalls detected
+   - Forwarding reduces some data hazards
+   - Control hazards cause pipeline flushes on branches
+
+DETAILED ANALYSIS
+-----------------
+
+A. HAZARD DETECTION AND HANDLING
+
+1. Data Hazards (Load-Use):
+   The pipelined implementation detected and handled 8 load-use hazards:
+   - Cycle 27-28: LW R10, 20(R1) followed by OUT 0, R10
+   - Cycle 41-42: LW R9, 0(R1) followed by SUB R9, R9, R15
+   - Cycle 50-51: LW R9, 28(R1) followed by ADD R9, R9, R15
+   - Cycle 55-56: LW R8, 20(R1) followed by OUT 2, R8
+   - Cycle 63-64: LW R7, 0(R1) followed by OUT 3, R7
+   - And several more throughout execution
+   
+   Impact: Each load-use hazard causes a 1-cycle stall, inserting a NOP in 
+   the pipeline to ensure data correctness.
+
+2. Forwarding:
+   The pipeline implements forwarding from:
+   - EX/MEM stage to EX stage (for ALU results)
+   - MEM/WB stage to EX stage (for register writes)
+   
+   This eliminates most data hazards except load-use cases where the data is 
+   not available until after the MEM stage.
+
+3. Control Hazards:
+   Branch instructions (BEQ, J) cause pipeline flushes:
+   - When a branch is taken, instructions already fetched are discarded
+   - The pipeline must fetch from the new target address
+   - This creates a 1-2 cycle penalty per taken branch
+   
+   Observed in the trace: Multiple branch instructions cause pipeline flushes,
+   particularly in the phase selection logic (normal_operation label).
+
+B. PERFORMANCE COMPARISON
+
+For the 150-cycle test window:
+
+Single-Cycle Architecture:
+- Throughput: 150 instructions in 150 cycles
+- CPI: 1.00 (optimal for single-cycle)
+- No overhead from hazards or pipeline management
+
+Pipelined Architecture:
+- Throughput: 95 instructions completed in 150 cycles
+- CPI: 1.58 (higher due to stalls and pipeline overhead)
+- Pipeline utilization: ~63% (95 instructions / 150 cycles)
+
+WHY PIPELINED CPI IS HIGHER IN THIS TEST
+----------------------------------------
+The pipelined architecture shows a higher CPI (1.58) than single-cycle (1.00) 
+for this specific 150-cycle test window due to:
+
+1. Pipeline Warm-up: The first 4-5 cycles are spent filling the pipeline
+   before the first instruction completes.
+
+2. Load-Use Stalls: 8 stalls were inserted, each consuming a cycle without
+   completing an instruction.
+
+3. Control Hazards: Multiple branch instructions cause pipeline flushes,
+   discarding partially executed instructions.
+
+4. Short Test Duration: With only 150 cycles, the overhead dominates.
+   In a longer run (1000+ cycles), the pipeline would achieve better
+   utilization and lower effective CPI.
+
+EXPECTED LONG-TERM PERFORMANCE
+-------------------------------
+For a longer execution (1000+ cycles):
+
+Single-Cycle:
+- CPI will remain at 1.00
+- Throughput: 1 instruction per cycle
+
+Pipelined (ideal case):
+- CPI approaches 1.00 in steady state (with forwarding)
+- With load-use stalls: CPI ≈ 1.10-1.15 (assuming 5-10% of instructions
+  cause stalls)
+- Throughput: ~0.85-0.90 instructions per cycle
+- Speedup: Approximately 1.0-1.15x over single-cycle for this workload
+
+However, the pipelined architecture provides:
+- Higher clock frequency potential (shorter critical path per stage)
+- Better resource utilization (multiple instructions in flight)
+- Scalability for more complex instruction sets
+
+ARCHITECTURAL TRADE-OFFS
+------------------------
+
+Single-Cycle Advantages:
++ Simple design and control logic
++ Predictable timing (1 cycle per instruction)
++ No hazard detection needed
++ Lower power consumption per instruction
++ Better for real-time systems requiring deterministic timing
+
+Single-Cycle Disadvantages:
+- Lower maximum clock frequency (longest instruction determines cycle time)
+- Lower instruction throughput
+- Less efficient resource utilization
+
+Pipelined Advantages:
++ Higher potential clock frequency (shorter stages)
++ Better instruction throughput in steady state
++ More efficient resource utilization
++ Scalable to deeper pipelines
+
+Pipelined Disadvantages:
+- Complex hazard detection and forwarding logic
+- Pipeline stalls reduce efficiency
+- Control hazards cause performance penalties
+- More complex design and debugging
+
+WORKLOAD-SPECIFIC OBSERVATIONS
+-------------------------------
+The traffic interchange simulation exhibits:
+
+1. High Memory Access Density:
+   - Many LW/SW instructions for state management
+   - Creates frequent load-use hazards
+   - Memory operations are in the critical path
+
+2. Complex Control Flow:
+   - Multiple conditional branches for phase selection
+   - Nested branch structures
+   - Causes pipeline flushes and reduces efficiency
+
+3. Sequential Dependencies:
+   - Timer decrements create data dependencies
+   - Phase transitions require sequential state updates
+   - Limits parallelism opportunities
+
+RECOMMENDATIONS FOR OPTIMIZATION
+--------------------------------
+
+For Single-Cycle Architecture:
+- Current implementation is already optimal for its design
+- Consider instruction-level optimizations in the program
+
+For Pipelined Architecture:
+1. Instruction Scheduling: Reorder instructions to reduce load-use hazards
+2. Branch Prediction: Implement branch prediction to reduce control hazards
+3. Cache Optimization: Add instruction/data caches to reduce memory latency
+4. Deeper Pipeline: Consider 6-7 stage pipeline for higher frequency
+5. Out-of-Order Execution: For more complex workloads, OoO could help
+
+CONCLUSION
+----------
+The single-cycle architecture demonstrates perfect CPI (1.00) for this test
+window, executing 150 instructions in 150 cycles with no overhead.
+
+The pipelined architecture shows higher CPI (1.58) in this short test due to
+pipeline warm-up, load-use stalls, and control hazards. However, the
+pipelined design includes sophisticated hazard detection and forwarding
+mechanisms that ensure correctness while maintaining the potential for higher
+throughput in longer-running programs.
+
+For real-time traffic control applications requiring deterministic timing,
+the single-cycle architecture may be preferable. For general-purpose
+computing with longer program execution, the pipelined architecture's
+potential for higher throughput and scalability makes it the better choice.
+
